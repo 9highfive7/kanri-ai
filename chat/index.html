@@ -137,7 +137,7 @@ button:disabled,input:disabled{opacity:.45;cursor:default}
     ai: (h) => push('<img src="' + AV + '" alt=""><div class="b">' + h + '</div>', 'ai'),
     adm: (h) => push('<div class="b">' + h + '</div>' + admIcon, 'adm'),
     sys: (h) => push(h, 'sys mono'),
-    you: (t) => { const el = push('<div class="b' + (/^[0-9]{4}$/.test(t) ? '' : ' msg') + '"></div>' + admIcon, 'you'); el.firstChild.textContent = t; }
+    you: (t) => { const el = push('<div class="b msg"></div>' + admIcon, 'you'); el.firstChild.textContent = t; }
   };
   const wait = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
 
