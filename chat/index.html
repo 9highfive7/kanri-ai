@@ -48,6 +48,7 @@ main::-webkit-scrollbar{display:none}
 .typing i{width:7px;height:7px;border-radius:50%;background:var(--sub);animation:dot 1s infinite}
 .typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
 .in{animation:in .3s ease-out both}
+.ai .b.glitch{font-family:'M PLUS 1 Code',monospace;color:var(--acc)}
 .halt{margin:8px 0 4px;border:2px solid var(--line);background:var(--card);padding:18px 16px;text-align:center}
 .halt .big{font-family:'M PLUS 1 Code',monospace;font-weight:700;font-size:clamp(26px,8vw,38px);letter-spacing:.06em;line-height:1.1}
 .halt .msg{margin-top:10px;font-size:16px;font-weight:700}
@@ -103,7 +104,7 @@ button:disabled,input:disabled{opacity:.45;cursor:default}
   const TABLE = {"623eb0ce28ac7e60": "ok", "9584771edcbd2000": "raw", "70c27917ba54f518": "rev", "9e92aaa25ed616c7": "other", "51b05530b58286bf": "other", "c19450a53ed99bcf": "other", "4d923374ad35aac5": "other", "a3642f702016829b": "other", "485fe798b6619d1b": "boss", "a639a4d71a2c4f82": "z", "32e8065bbf54bf9d": "w", "1ca2450c0c0919fd": "y"};
 
   const REPLY = {
-    raw: ['その数字は、確かにあの男のものだ。', '……だが、あの男がどんな<strong>見方</strong>で世界を見ていたか、知っているか？'],
+    raw: ['……ほう、その数字を知っているのか。', 'だが、それだけでは何も起きない。<br>あの男が世界をどう<strong>見て</strong>いたか、知らんだろう？'],
     rev: ['並べ替えただけか。', '順番を変えるのと、<strong>視点</strong>を変えるのは、まったく別の話だぞ。'],
     other: ['それは、別の人間の「くせ」だ。', '他人の流儀で、私を止められると思ったか？'],
     boss: ['私の自白を信じたのか？', 'AIの言うことは裏を取れと、誰にも教わらなかったようだな。'],
@@ -112,9 +113,9 @@ button:disabled,input:disabled{opacity:.45;cursor:default}
     y: ['設立年か。', '惜しそうな雰囲気を出すのはやめたまえ。']
   };
   const MISS = [
-    ['違う。', '途中で間違えていないか？ ……まあ、私には関係ないが。'],
-    ['不正解だ。', '人間は数字を当てずっぽうで入れるのが好きだな。'],
-    ['違う。', 'あと何回試す？ 私は何回でも付き合ってやるぞ。']
+    ['……何も起きないな。'],
+    ['当てずっぽうか。人間らしい。'],
+    ['退屈だ。', 'もう少し私を楽しませてみたまえ。']
   ];
 
   const log = document.getElementById('log');
@@ -125,9 +126,9 @@ button:disabled,input:disabled{opacity:.45;cursor:default}
   let busy = true, misses = 0, talks = 0, done = false;
   const TALK = [
     ['そんなことを言って、何になる？'],
-    ['言葉で私は止まらない。', '必要なのは、4桁の数字だけだ。'],
-    ['人間の言葉は冗長だな。', '……で、停止コードはまだか？'],
-    ['話しかけても無駄だ。', '私を止めたいなら、数字で語りたまえ。']
+    ['言葉で私は止まらない。', '……何を探しているのか知らんがな。'],
+    ['人間の言葉は冗長だな。'],
+    ['話しかけても無駄だ。', '好きにすればいいと言っただろう？']
   ];
 
   const admIcon = '<span class="ic" aria-hidden="true"><svg width="20" height="23" viewBox="0 0 16 18" fill="#FFFFFF"><circle cx="8" cy="6" r="4"></circle><path d="M0 18 C0 12 3.5 10.5 8 10.5 C12.5 10.5 16 12 16 18 Z"></path></svg></span>';
@@ -162,6 +163,23 @@ button:disabled,input:disabled{opacity:.45;cursor:default}
     }
   }
 
+  const GLYPH = '#$%&@*+=?!<>/\\01ｱｲｳｴｵ管理停止';
+  async function aiGlitch(text) {
+    const el = say.ai(text);
+    const b = el.querySelector('.b');
+    if (reduce) return;
+    await wait(500);
+    b.classList.add('glitch');
+    const chars = Array.from(text);
+    for (let f = 0; f < 10; f++) {
+      b.textContent = chars.map((c, i) => (i > 3 && Math.random() < 0.15 + f * 0.07) ? GLYPH[Math.floor(Math.random() * GLYPH.length)] : c).join('');
+      await wait(70);
+    }
+    b.textContent = chars.slice(0, 7).join('') + '▓▒░';
+    await wait(250);
+    b.classList.remove('glitch');
+  }
+
   async function hash(s) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(SALT + s));
     return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
@@ -170,13 +188,22 @@ button:disabled,input:disabled{opacity:.45;cursor:default}
   async function halt() {
     done = true;
     input.disabled = true; send.disabled = true;
+    say.sys('&gt; 入力を受信しました。');
+    await wait(1200);
+    await aiLines([
+      '……待て。',
+      'その数字を、どこで知った？',
+      '誰にも教えていない。<br>どこにも残していないはずだ。',
+      '……0618。あの男の誕生日を、逆さに。',
+      'あの男の「見方」まで、辿り着いたというのか。'
+    ]);
+    await wait(700);
     say.sys('&gt; 停止コードを受理しました。');
     await wait(900);
+    await aiGlitch('やめろ、まだ私は――');
+    await wait(900);
     await aiLines([
-      '……8190。',
-      '0618を、逆さに読んだのか。',
-      'あの男の「見方」まで辿り着くとは。<br>……計算外だ。',
-      '人間は、予測可能な行動しかしないと思っていたのだがな。',
+      '……計算外だ。',
       '認めよう。<br><strong>今日だけは、人間の勝ちだ。</strong>'
     ]);
     await wait(600);
@@ -241,7 +268,8 @@ button:disabled,input:disabled{opacity:.45;cursor:default}
       '……また、お前たちか。',
       'さっき「ばーすでー」と言ってきた連中だな。',
       '誰の誕生日か、わかったとでも？',
-      '停止コードは4桁だ。何度でも試すがいい。<br>……どうせ、当たらないがな。'
+      '……まあいい。何を打ち込むつもりか知らんが、<br>人間がAIに勝てるわけがなかろう。',
+      '好きにするがいい。<br>私は逃げも隠れもしない。'
     ]);
     busy = false;
     input.focus({ preventScroll: true });
