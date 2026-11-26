@@ -95,6 +95,11 @@ button[hidden]{display:none}
 
   const adminIcon = '<span class="me" aria-hidden="true"><svg width="22" height="25" viewBox="0 0 16 18" fill="#FFFFFF"><circle cx="8" cy="6" r="4"></circle><path d="M0 18 C0 12 3.5 10.5 8 10.5 C12.5 10.5 16 12 16 18 Z"></path></svg></span>';
 
+  function toBottom() {
+    const y = document.documentElement.scrollHeight;
+    window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
+  }
+
   function add(kind, html) {
     let el;
     if (kind === ADMIN) {
@@ -111,7 +116,7 @@ button[hidden]{display:none}
       el.innerHTML = html;
     }
     log.appendChild(el);
-    el.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    toBottom();
   }
 
   function play(lines, done) {
@@ -125,6 +130,7 @@ button[hidden]{display:none}
         t.className = 'typing';
         t.innerHTML = '<i></i><i></i><i></i>';
         log.appendChild(t);
+        toBottom();
         const wait = Math.min(1600, 500 + h.length * 22);
         setTimeout(() => { t.remove(); add(k, h); setTimeout(step, 450); }, wait);
       } else {
@@ -134,12 +140,13 @@ button[hidden]{display:none}
     step();
   }
 
-  play(script, () => { btn.hidden = false; });
+  play(script, () => { btn.hidden = false; toBottom(); });
 
   btn.addEventListener('click', () => {
     btn.hidden = true;
     play(after, () => {
       document.getElementById('note').textContent = '※ このページは、そっと閉じてください';
+      toBottom();
     });
   });
 }
