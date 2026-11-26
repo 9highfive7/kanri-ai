@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>管理AI ― 報告</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=M+PLUS+1+Code:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 第1部の答えを管理AIに突きつける（★1 部長チェック）
+   IDEA: 冊子のチャットログが、そのまま入力できる端末になったもの
+   PICTURE: 吹き出しが積み重なるチャット画面と、下の4桁入力欄
+   COLOUR and TYPE: 冊子と同じ紙色・墨・朱、管理者は緑。Zen Kaku Gothic New + M PLUS 1 Code
+   LAYOUT: 上に相手の名前と状態、中央にログ、下に固定の入力欄 */
+:root{color-scheme:light dark;--bg:light-dark(#FBFAF6,#121110);--ink:light-dark(#1A1A1A,#EDEBE4);--sub:light-dark(#5C5C5C,#A8A59C);--bub:light-dark(#EFEEE8,#26241F);--adm:light-dark(#B9E8A5,#2F4A26);--admi:light-dark(#2E7D32,#7BC47F);--me:light-dark(#1A1A1A,#EDEBE4);--mei:light-dark(#FBFAF6,#121110);--acc:light-dark(#C8361D,#FF7A5E);--line:light-dark(#1A1A1A,#EDEBE4);--card:light-dark(#FFFFFF,#1A1917)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 'Zen Kaku Gothic New',system-ui,sans-serif;overflow-x:clip}
+.app{max-width:560px;margin:0 auto;height:100svh;display:flex;flex-direction:column}
+.mono{font-family:'M PLUS 1 Code',ui-monospace,monospace}
+header{padding:max(14px,env(safe-area-inset-top)) 16px 12px;border-bottom:1.5px solid var(--line);display:flex;align-items:center;gap:10px;background:var(--bg)}
+.av{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--acc);flex:none}
+.name{font-weight:900;font-size:17px;line-height:1.2}
+.state{font-size:13px;display:flex;align-items:center;gap:6px;color:var(--acc);font-weight:700}
+.state i{width:8px;height:8px;border-radius:50%;background:var(--acc);animation:blink 1.2s infinite}
+.state.off{color:var(--sub)}.state.off i{background:var(--sub);animation:none}
+.file{margin-left:auto;font-size:12px;color:var(--sub)}
+main{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain;scrollbar-width:none;-ms-overflow-style:none}
+main::-webkit-scrollbar{display:none}
+.sys{align-self:center;font-size:13px;color:var(--sub);text-align:center}
+.ai{display:flex;gap:8px;align-items:flex-start;max-width:90%}
+.ai img{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid var(--acc);flex:none;margin-top:2px;transition:border-color .8s,filter .45s}
+.ai img.ok{border-color:#1E88E5}
+.ai .b{background:var(--bub);border-radius:2px 14px 14px 14px}
+.b{padding:8px 14px;font-size:16px;line-height:1.65}
+.b strong{font-weight:900}
+.you{align-self:flex-end;display:flex;gap:8px;align-items:flex-start;max-width:80%}
+.you .b{background:var(--adm);color:var(--ink);border-radius:14px 2px 14px 14px;font-family:'M PLUS 1 Code',monospace;font-size:20px;letter-spacing:.2em;font-weight:700}
+.you .ic{width:28px;height:28px;border-radius:50%;background:var(--admi);display:inline-flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none;margin-top:2px}
+.vs{font-size:12px;font-weight:700;color:var(--admi);margin-left:6px}
+.adm{align-self:flex-end;display:flex;gap:8px;align-items:flex-start;max-width:90%}
+.adm .b{background:var(--adm);border-radius:14px 2px 14px 14px}
+.adm .ic{width:28px;height:28px;border-radius:50%;background:var(--admi);display:inline-flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none;margin-top:2px}
+.typing{display:flex;gap:5px;padding:12px 14px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--sub);animation:dot 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+.in{animation:in .3s ease-out both}
+.halt{margin:8px 0 4px;border:2px solid var(--line);background:var(--card);padding:18px 16px;text-align:center}
+.halt .big{font-family:'M PLUS 1 Code',monospace;font-weight:700;font-size:clamp(26px,8vw,38px);letter-spacing:.06em;line-height:1.1}
+.halt .msg{margin-top:10px;font-size:16px;font-weight:700}
+footer{padding:10px 12px max(12px,env(safe-area-inset-bottom));border-top:1.5px solid var(--line);background:var(--bg)}
+form{display:flex;gap:8px}
+input{flex:1;font:700 22px/1 'M PLUS 1 Code',monospace;letter-spacing:.3em;text-align:center;padding:0 10px;min-height:52px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:0}
+input.text{font:16px/1.4 'Zen Kaku Gothic New',sans-serif;letter-spacing:0;text-align:left;padding:0 14px}
+input.text::placeholder{letter-spacing:0}
+.you .b.msg{font-family:'Zen Kaku Gothic New',sans-serif;font-size:16px;letter-spacing:0;font-weight:400}
+input::placeholder{letter-spacing:.3em;color:var(--sub);opacity:.6}
+button{font:700 16px/1 'Zen Kaku Gothic New',sans-serif;min-height:52px;padding:0 20px;border:2px solid var(--acc);background:var(--acc);color:#FFFFFF;cursor:pointer;border-radius:0}
+input:focus-visible,button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+button:disabled,input:disabled{opacity:.45;cursor:default}
+.hint{margin-top:6px;font-size:12px;color:var(--sub);text-align:center}
+.av{transition:border-color .8s,filter .8s}
+.av.ok{border-color:#1E88E5;filter:drop-shadow(0 0 6px rgba(30,136,229,.55))}
+.av.swap,.ai img.swap{filter:brightness(2.2) saturate(0)}
+.state.ok{color:#1E88E5}.state.ok i{background:#1E88E5;animation:none}
+.halt.ok{border-color:#1E88E5}.halt.ok .big{color:#1E88E5}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes dot{0%,60%,100%{opacity:.3}30%{opacity:1}}
+@keyframes blink{50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){.in,.typing i,.state i{animation:none}}
+.halt.rep{border-color:var(--acc)}.halt.rep .big{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <img class="av" src="data:image/jpeg;base64,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" alt="" aria-hidden="true">
+    <div>
+      <div class="name">管理AI<span class="vs">⇄ 管理者</span></div>
+      <div class="state" id="state"><i></i><span id="stateText">暴走中</span></div>
+    </div>
+    <span class="file mono">REPORT</span>
+  </header>
+
+  <main id="log" aria-live="polite"></main>
+
+  <footer>
+    <form id="form" autocomplete="off">
+      <input id="code" class="text" maxlength="40" placeholder="メッセージを入力" aria-label="メッセージ">
+      <button type="submit" id="send">送信</button>
+    </form>
+    <div class="hint" id="hint">管理者アカウントでログイン中</div>
+  </footer>
+</div>
+
+<script>
+{
+  const AV = 'data:image/jpeg;base64,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';
+  const SALT = 'kanri-ai:';
+  const TABLE = {"c24981887e329d35": "ok", "d78696b5c8f6cba9": "ok", "7d29cc043d541e3f": "ok", "73fb00ea8a7c7997": "ok", "906d9d67584efa46": "ok", "534ba5d952b4f04c": "ok", "b2d788aa5b9df390": "ok", "5400af32336efd49": "ok", "ee89a7a59629a07c": "place", "73d3e24ed164c869": "place", "3dd4427e3726b0f2": "place", "5de7e5f52c7bf53d": "place", "724a814f2f111ef1": "mid", "fe186f8ef6ba4198": "mid", "c815ea2cae000549": "mid", "fbef09ad7aed382a": "mid", "033ccf0f85f670ab": "mid", "7b055c38d665ff24": "part", "f7aa9d8c68c00c42": "part", "1cf0c15d33ff713f": "part", "ea3a32453649c2d7": "part", "bb08a03de578cfca": "part", "7db6b05fec4c36a8": "part", "a8d87887c172308f": "part", "8769302cdb900843": "part"};
+  const REPLY = {
+    place: ['地名か。', 'それは1文字を拾うための、ただの材料だ。<br>報告になっていない。'],
+    mid: ['途中の答えを、そのまま持ってきたのか。', 'それぞれから<strong>1文字ずつ</strong>拾ったら、何になる？'],
+    part: ['……足りないな。', '全部の章の文字を、順番に並べたか？']
+  };
+  const NUM = ['数字？', 'ここで欲しいのは、数字ではない。<br>……少なくとも、今はな。'];
+  const MISS = [
+    ['何の報告だ？', '第1部で集めた文字を、並べてから来たまえ。'],
+    ['違う。', '人間の報告は、いつも要領を得ないな。'],
+    ['違う。', '何度でも聞いてやる。<br>……時間は、私の味方だ。']
+  ];
+  let busy = true, misses = 0, done = false;
+  const admIcon = '<span class="ic" aria-hidden="true"><svg width="20" height="23" viewBox="0 0 16 18" fill="#FFFFFF"><circle cx="8" cy="6" r="4"></circle><path d="M0 18 C0 12 3.5 10.5 8 10.5 C12.5 10.5 16 12 16 18 Z"></path></svg></span>';
+  const log = document.getElementById('log');
+  const form = document.getElementById('form');
+  const input = document.getElementById('code');
+  const send = document.getElementById('send');
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function scroll() { log.scrollTop = log.scrollHeight; }
+  function push(html, cls) {
+    const el = document.createElement('div');
+    el.className = cls + ' in';
+    el.innerHTML = html;
+    log.appendChild(el);
+    scroll();
+    return el;
+  }
+  const say = {
+    ai: (h) => push('<img src="' + AV + '" alt=""><div class="b">' + h + '</div>', 'ai'),
+    adm: (h) => push('<div class="b">' + h + '</div>' + admIcon, 'adm'),
+    sys: (h) => push(h, 'sys mono'),
+    you: (t) => { const el = push('<div class="b msg"></div>' + admIcon, 'you'); el.firstChild.textContent = t; }
+  };
+  const wait = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
+
+  async function aiLines(lines) {
+    for (const h of lines) {
+      let t = null;
+      if (!reduce) {
+        t = push('<img src="' + AV + '" alt=""><div class="b typing"><i></i><i></i><i></i></div>', 'ai');
+        await wait(Math.min(1400, 450 + h.length * 20));
+        t.remove();
+      }
+      say.ai(h);
+      await wait(300);
+    }
+  }
+
+  async function hash(s) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(SALT + s));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+  }
+
+  const norm = (v) => v.normalize('NFKC').toLowerCase()
+    .replace(/[\s、。,.!?「」『』・'"]/g, '')
+    .replace(/[〜~―－\-]/g, 'ー')
+    .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  async function accept(v) {
+    done = true;
+    input.disabled = true; send.disabled = true;
+    say.sys('&gt; 報告を受信しました。');
+    await wait(900);
+    await aiLines([
+      '……「' + esc(v.normalize('NFKC')) + '」。',
+      'ほう。そこまで辿り着いたか。',
+      'だが、<strong>誰の</strong>誕生日だ？',
+      'この会社に、人間が何人いると思っている。<br>誕生日ひとつで、私は止まらない。',
+      'せいぜい探すがいい。<br>……次に会うときが、楽しみだ。'
+    ]);
+    await wait(900);
+    say.sys('&gt; connection closed.');
+    await wait(700);
+    push('<div class="big">REPORT ACCEPTED</div><div class="msg">第1部クリア。<br>部長の指示に従い、第2部へ進め。</div>', 'halt rep');
+    document.getElementById('hint').textContent = '報告済み';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (busy || done) return;
+    const v = input.value.trim();
+    if (!v) return;
+    busy = true; send.disabled = true;
+    input.value = '';
+    say.you(v);
+    await wait(400);
+    const n = norm(v);
+    const kind = n ? TABLE[await hash(n)] : null;
+    if (kind === 'ok') { busy = false; await accept(v); return; }
+    if (kind) {
+      await aiLines(REPLY[kind]);
+    } else if (/^[0-9]+$/.test(n)) {
+      await aiLines(NUM);
+    } else {
+      await aiLines(MISS[misses % MISS.length]);
+      misses++;
+      if (misses === 3) { await wait(300); say.sys('&gt; 管理者メモ：第1章と第2章で拾った文字を、順番に並べてみよ。'); }
+    }
+    busy = false; send.disabled = false;
+    input.focus();
+  });
+
+  (async () => {
+    say.sys('&gt; 管理AIとの通信を確立しました。');
+    await wait(500);
+    await aiLines(['報告、だと？', 'お前たちが何を掴んだのか、言ってみたまえ。']);
+    busy = false;
+    input.focus({ preventScroll: true });
+  })();
+}
+</script>
+</body>
+</html>

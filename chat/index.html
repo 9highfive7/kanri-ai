@@ -122,7 +122,7 @@ button:disabled,input:disabled{opacity:.45;cursor:default}
   const input = document.getElementById('code');
   const send = document.getElementById('send');
   const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let busy = false, misses = 0, talks = 0, done = false;
+  let busy = true, misses = 0, talks = 0, done = false;
   const TALK = [
     ['そんなことを言って、何になる？'],
     ['言葉で私は止まらない。', '必要なのは、4桁の数字だけだ。'],
@@ -237,7 +237,13 @@ button:disabled,input:disabled{opacity:.45;cursor:default}
   (async () => {
     say.sys('&gt; 管理AIとの通信を確立しました。');
     await wait(500);
-    await aiLines(['停止コードを入力するつもりか？', '4桁だ。何度でも試すがいい。<br>……どうせ、当たらないがな。']);
+    await aiLines([
+      '……また、お前たちか。',
+      'さっき「ばーすでー」と言ってきた連中だな。',
+      '誰の誕生日か、わかったとでも？',
+      '停止コードは4桁だ。何度でも試すがいい。<br>……どうせ、当たらないがな。'
+    ]);
+    busy = false;
     input.focus({ preventScroll: true });
   })();
 }
